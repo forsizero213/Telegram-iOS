@@ -3,13 +3,11 @@ name: CI
 on:
   push:
     branches: [ master ]
-
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: macos-latest
-
     steps:
       - uses: actions/checkout@v2
         with:
@@ -31,24 +29,18 @@ jobs:
       - name: Build the App
         run: |
           set -x
-
           # source code paths are included in the final binary, so we need to make them stable across builds
           SOURCE_DIR=/Users/Shared/telegram-ios
-
           # use canonical bazel root
           BAZEL_USER_ROOT="/private/var/tmp/_bazel_containerhost"
-
           cd $SOURCE_DIR
-
           BUILD_NUMBER_OFFSET="$(cat build_number_offset)"
-
           export APP_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["app"]);')
           export COMMIT_COUNT=$(git rev-list --count HEAD)
           export COMMIT_COUNT="$(($COMMIT_COUNT+$BUILD_NUMBER_OFFSET))"
           export BUILD_NUMBER="$COMMIT_COUNT"
           echo "BUILD_NUMBER=$(echo $BUILD_NUMBER)" >> $GITHUB_ENV
           echo "APP_VERSION=$(echo $APP_VERSION)" >> $GITHUB_ENV
-
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
           python3 -u build-system/Make/Make.py \
             --bazelUserRoot="$BAZEL_USER_ROOT" \
@@ -62,15 +54,20 @@ jobs:
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
-          for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Telegram.ipa; do
-            cp "$f" $OUTPUT_PATH/
-          done
+
+          if [ -f "bazel-bin/Telegram/Telegram.ipa" ]; then
+            cp "bazel-bin/Telegram/Telegram.ipa" "$OUTPUT_PATH/"
+          else
+            cp bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/Telegram.ipa "$OUTPUT_PATH/"
+          fi
 
           # collect dsym
           mkdir -p build/DSYMs
-          for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/*.dSYM; do
-            cp -R "$f" build/DSYMs/
-          done
+          if [ -d "bazel-bin/Telegram/Telegram.app.dSYM" ]; then
+            cp -R bazel-bin/Telegram/*.dSYM build/DSYMs/ 2>/dev/null || true
+          else
+            cp -R bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/*.dSYM build/DSYMs/ 2>/dev/null || true
+          fi
           zip -r "./$OUTPUT_PATH/Telegram.DSYMs.zip" build/DSYMs 1>/dev/null
 
       - name: Create Release
