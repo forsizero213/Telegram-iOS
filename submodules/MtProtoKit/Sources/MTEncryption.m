@@ -761,6 +761,7 @@ static NSData *decrypt_TL_data(id<EncryptionProvider> provider, unsigned char bu
 "+aEyZ+uVgLLQbRA1dEjSDZ2iGRy12Mk5gpYc397aYp438fsJoHIgJ2lgMv5h7WY9\n"
 "t6N/byY9Nw9p21Og3AoXSL2q/2IJ1WRUhebgAdGVMlV1fkuOQoEzR7EdpqtQD9Cs\n"
 "5+bfo3Nhmcyvk5ftB0WkJ9z6bNZ7yxrP8wIDAQAB\n"
+"-----END RSA PUBLIC KEY-----";
     
     id<MTRsaPublicKey> rsaKey = [provider parseRSAPublicKey:keyString];
     if (rsaKey == nil) {
