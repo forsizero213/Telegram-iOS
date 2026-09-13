@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-latest-xlarge
+    runs-on: macos-latest-large
     steps:
       - uses: actions/checkout@v4
         with:
